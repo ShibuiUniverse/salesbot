@@ -1,0 +1,5 @@
+.env
+sales_db.json
+__pycache__/
+*.pyc
+.DS_Store
