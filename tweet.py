@@ -22,8 +22,7 @@ client = tweepy.Client(
 )
 
 def build_image_url(token_id: str) -> str:
-    token_padded = "{:05d}".format(int(token_id))
-    return f"{CF_IMAGE_BASE}/{token_padded}.png"
+    return f"{CF_IMAGE_BASE}/assets/{token_id}"
 
 def tweet_image(image_url: str, message: str):
     filename = "/tmp/temp.png"
