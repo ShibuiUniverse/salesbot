@@ -1,26 +1,11 @@
-import json
-import os
+import redis
+from config import cfg
 
-DB_FILE = "sales_db.json"
-
-def _load() -> dict:
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-def _save(data: dict):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+_client = redis.from_url(cfg["REDIS_URL"], decode_responses=True)
 
 def read_db(key: str) -> str:
-    return _load().get(key, "")
+    return _client.get(key) or ""
 
 def update_db(key: str, value: str):
-    data = _load()
-    data[key] = value
-    _save(data)
+    _client.set(key, value)
     print(f"DB updated: {key} → {value}")

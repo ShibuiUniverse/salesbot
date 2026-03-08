@@ -2,14 +2,28 @@ import time
 import requests
 from tweet import send_tweet
 from db_functions import update_db, read_db
-import os
+from config import cfg
 
-CONTRACT        = "0xd592924c2abcc1b532114917e697609cb415589c"
-COLLECTION      = "Pirates of Fukushū"
-OPENSEA_SLUG    = "pirates-of-fukushu"
-OPENSEA_API_KEY = os.environ["OPENSEA_API_KEY"]
-POLL_INTERVAL   = 120
-DB_KEY          = "pirates_eth"
+POLL_INTERVAL = 120
+
+# Add new EVM chains here when ready.
+# Zil2 is EVM-compatible — just needs its own contract address and OpenSea slug.
+CHAINS = [
+    {
+        "name":         "Pirates of Fukushū",
+        "contract":     "0xd592924c2abcc1b532114917e697609cb415589c",
+        "opensea_slug": "pirates-of-fukushu",
+        "db_key":       "pirates_eth",
+        "chain":        "ethereum",
+    },
+    # {
+    #     "name":         "Pirates of Fukushū",
+    #     "contract":     "0x...",
+    #     "opensea_slug": "pirates-of-fukushu-zil",
+    #     "db_key":       "pirates_zil",
+    #     "chain":        "zil2",
+    # },
+]
 
 def get_eth_price_usd():
     try:
@@ -23,11 +37,11 @@ def get_eth_price_usd():
         print(f"Could not fetch ETH price: {e}")
         return 0.0
 
-def get_recent_sales():
-    url = f"https://api.opensea.io/api/v2/events/collection/{OPENSEA_SLUG}"
+def get_recent_sales(opensea_slug: str):
+    url = f"https://api.opensea.io/api/v2/events/collection/{opensea_slug}"
     headers = {
         "accept": "application/json",
-        "x-api-key": OPENSEA_API_KEY,
+        "x-api-key": cfg["OPENSEA_API_KEY"],
     }
     params = {"event_type": "sale", "limit": 50}
     try:
@@ -53,11 +67,11 @@ def parse_event(event):
         print(f"Could not parse event: {e}")
         return None
 
-def track():
-    print(f"[Shibui Sales Bot] Checking {COLLECTION} sales on ETH...")
-    last_tx   = read_db(DB_KEY)
-    events    = get_recent_sales()
-    eth_price = get_eth_price_usd()
+def track(chain_cfg: dict, eth_price: float):
+    name = chain_cfg["name"]
+    print(f"[Shibui Sales Bot] Checking {name} ({chain_cfg['chain']}) sales...")
+    last_tx   = read_db(chain_cfg["db_key"])
+    events    = get_recent_sales(chain_cfg["opensea_slug"])
     new_sales = []
     for event in events:
         tx = event.get("transaction", "")
@@ -70,16 +84,18 @@ def track():
     for sale in new_sales:
         usd = sale["eth"] * eth_price
         print(f"  → Sale: #{sale['token_id']}  {sale['eth']:.4f} ETH  (${usd:.2f})")
-        update_db(DB_KEY, sale["tx_hash"])
+        update_db(chain_cfg["db_key"], sale["tx_hash"])
         time.sleep(1)
-        send_tweet(sale, COLLECTION, CONTRACT, eth_price)
+        send_tweet(sale, name, chain_cfg["contract"], chain_cfg["chain"], eth_price)
     if not new_sales:
         print("  No new sales.")
 
 print("Shibui ETH Sales Bot starting...")
 while True:
     try:
-        track()
+        eth_price = get_eth_price_usd()
+        for chain_cfg in CHAINS:
+            track(chain_cfg, eth_price)
     except Exception as e:
         print(f"Unexpected error: {e}")
     time.sleep(POLL_INTERVAL)

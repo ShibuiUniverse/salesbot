@@ -1,14 +1,15 @@
 import os
 import tweepy
 import requests
+from config import cfg
 
-consumer_key        = os.environ["TWITTER_CONSUMER_KEY"]
-consumer_secret     = os.environ["TWITTER_CONSUMER_SECRET"]
-bearer_token        = os.environ["TWITTER_BEARER_TOKEN"]
-access_token        = os.environ["TWITTER_ACCESS_TOKEN"]
-access_token_secret = os.environ["TWITTER_ACCESS_TOKEN_SECRET"]
-DISCORD_WEBHOOK     = os.environ["DISCORD_WEBHOOK_URL"]
-CF_IMAGE_BASE       = os.environ["CF_IMAGE_BASE"]
+consumer_key        = cfg["TWITTER_CONSUMER_KEY"]
+consumer_secret     = cfg["TWITTER_CONSUMER_SECRET"]
+bearer_token        = cfg["TWITTER_BEARER_TOKEN"]
+access_token        = cfg["TWITTER_ACCESS_TOKEN"]
+access_token_secret = cfg["TWITTER_ACCESS_TOKEN_SECRET"]
+DISCORD_WEBHOOK     = cfg["DISCORD_WEBHOOK_URL"]
+CF_IMAGE_BASE       = cfg["CF_IMAGE_BASE"]
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
@@ -53,13 +54,13 @@ def send_discord(message: str, image_url: str):
     except Exception as e:
         print(f"Discord post failed: {e}")
 
-def send_tweet(sale: dict, collection: str, contract: str, eth_spot: float):
+def send_tweet(sale: dict, collection: str, contract: str, chain: str, eth_spot: float):
     token_id  = sale["token_id"]
     eth       = sale["eth"]
     usd       = eth * eth_spot
     if usd == 0:
         return
-    opensea_url = f"https://opensea.io/item/ethereum/{contract}/{token_id}"
+    opensea_url = f"https://opensea.io/item/{chain}/{contract}/{token_id}"
     image_url   = build_image_url(token_id)
     message = (
         f"{collection} #{token_id} just sold!\n\n"
