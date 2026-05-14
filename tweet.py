@@ -40,7 +40,14 @@ def tweet_image(image_url: str, message: str):
         os.remove(filename)
         print("Tweeted!")
     except Exception as e:
-        print(f"Tweet failed: {e}")
+        detail = ""
+        resp = getattr(e, "response", None)
+        if resp is not None:
+            try:
+                detail = resp.text
+            except Exception:
+                pass
+        print(f"Tweet failed: {type(e).__name__}: {e} | body: {detail}")
 
 def send_discord(message: str, image_url: str):
     data = {
