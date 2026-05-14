@@ -70,7 +70,7 @@ def send_tweet(sale: dict, collection: str, contract: str, chain: str, eth_spot:
     image_url   = build_image_url(token_id)
     message = (
         f"{collection} #{token_id} just sold!\n\n"
-        f"Price: {eth:.4f} $ETH (${usd:.2f} $USD)\n\n"
+        f"Price: {eth:.4f} $ETH (${usd:.2f} USD)\n\n"
         f"{opensea_url}\n\n"
         f"Marketplace: OpenSea\n\n"
         f"#Shibui #PiratesOfFukushu #NFT❗️"
